@@ -1,11 +1,6 @@
-// Erro com status HTTP conhecido, lançado pelos controllers.
-class HttpError extends Error {
-  constructor(status, message, details) {
-    super(message);
-    this.status = status;
-    this.details = details;
-  }
-}
+const { ValidationError, NotFoundError, ConflictError } = require('../../../domain/shared/errors');
+
+// Única parte do sistema que sabe traduzir erros de domínio em status HTTP.
 
 function notFoundHandler(req, res) {
   res.status(404).json({ error: 'Rota não encontrada' });
@@ -13,10 +8,14 @@ function notFoundHandler(req, res) {
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  if (err instanceof HttpError) {
-    const body = { error: err.message };
-    if (err.details) body.details = err.details;
-    return res.status(err.status).json(body);
+  if (err instanceof ValidationError) {
+    return res.status(400).json({ error: err.message, details: err.details });
+  }
+  if (err instanceof NotFoundError) {
+    return res.status(404).json({ error: err.message });
+  }
+  if (err instanceof ConflictError) {
+    return res.status(409).json({ error: err.message });
   }
 
   // JSON malformado no corpo da requisição (gerado pelo express.json()).
@@ -35,4 +34,4 @@ function errorHandler(err, req, res, next) {
   res.status(500).json({ error: 'Erro interno do servidor' });
 }
 
-module.exports = { HttpError, notFoundHandler, errorHandler };
+module.exports = { notFoundHandler, errorHandler };
