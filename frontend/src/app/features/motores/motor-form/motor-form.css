@@ -1,0 +1,62 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.9rem 1rem;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 520px) {
+  .span-2 {
+    grid-column: auto;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.875rem;
+}
+
+.field > span {
+  font-weight: 500;
+}
+
+.field small {
+  color: var(--danger);
+}
+
+.field.invalid input,
+.field.invalid select {
+  border-color: var(--danger);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.hint {
+  margin-right: auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+}

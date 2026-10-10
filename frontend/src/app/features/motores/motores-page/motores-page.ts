@@ -4,12 +4,13 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, map, merge, of, startWith, Subject, switchMap, tap } from 'rxjs';
 import { Motor } from '../../../core/models/motor';
 import { MotoresService } from '../../../core/services/motores.service';
+import { MotorForm } from '../motor-form/motor-form';
 import { MotoresTable } from '../motores-table/motores-table';
 
 // Página "inteligente": orquestra busca, estados de carregamento e ações.
 @Component({
   selector: 'app-motores-page',
-  imports: [ReactiveFormsModule, MotoresTable],
+  imports: [ReactiveFormsModule, MotoresTable, MotorForm],
   templateUrl: './motores-page.html',
   styleUrl: './motores-page.css',
 })
@@ -20,6 +21,10 @@ export class MotoresPage {
   readonly motores = signal<Motor[]>([]);
   readonly carregando = signal(true);
   readonly erroCarregamento = signal(false);
+
+  // Estado do formulário: fechado, novo (motor null) ou edição (motor preenchido).
+  readonly formularioAberto = signal(false);
+  readonly motorEmEdicao = signal<Motor | null>(null);
 
   // Dispara uma nova consulta com o termo atual (ex.: após salvar ou excluir).
   private readonly recarregar$ = new Subject<void>();
@@ -59,8 +64,26 @@ export class MotoresPage {
     this.recarregar$.next();
   }
 
+  novo(): void {
+    this.motorEmEdicao.set(null);
+    this.formularioAberto.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   editar(motor: Motor): void {
-    // implementado junto com o formulário
+    this.motorEmEdicao.set(motor);
+    this.formularioAberto.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  fecharFormulario(): void {
+    this.formularioAberto.set(false);
+    this.motorEmEdicao.set(null);
+  }
+
+  aoSalvar(): void {
+    this.fecharFormulario();
+    this.recarregar();
   }
 
   excluir(motor: Motor): void {

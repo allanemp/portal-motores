@@ -8,7 +8,14 @@
       autocomplete="off"
     />
   </label>
+  @if (!formularioAberto()) {
+    <button type="button" class="btn btn-primary" (click)="novo()">+ Novo motor</button>
+  }
 </section>
+
+@if (formularioAberto()) {
+  <app-motor-form [motor]="motorEmEdicao()" (salvo)="aoSalvar()" (cancelado)="fecharFormulario()" />
+}
 
 @if (carregando()) {
   <p class="state" role="status"><span class="spinner"></span> Carregando motores…</p>

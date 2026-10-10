@@ -1,0 +1,94 @@
+<form class="card" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+  <h2>{{ editando ? 'Editar motor' : 'Novo motor' }}</h2>
+
+  <div class="grid">
+    <label class="field" [class.invalid]="erro('codigo')">
+      <span>Código *</span>
+      <input formControlName="codigo" maxlength="30" placeholder="WEG-W22-010" />
+      @if (erro('codigo'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field span-2" [class.invalid]="erro('modelo')">
+      <span>Modelo *</span>
+      <input formControlName="modelo" maxlength="80" placeholder="W22 IR3 Premium" />
+      @if (erro('modelo'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('fabricante_id')">
+      <span>Fabricante *</span>
+      <select formControlName="fabricante_id">
+        <option [ngValue]="null" disabled>
+          {{ carregandoFabricantes() ? 'Carregando…' : 'Selecione…' }}
+        </option>
+        @for (f of fabricantes(); track f.id) {
+          <option [ngValue]="f.id">{{ f.nome }}</option>
+        }
+      </select>
+      @if (erro('fabricante_id'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('potencia_cv')">
+      <span>Potência (cv) *</span>
+      <input type="number" formControlName="potencia_cv" step="0.01" min="0.01" placeholder="10" />
+      @if (erro('potencia_cv'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('tensao')">
+      <span>Tensão *</span>
+      <input formControlName="tensao" maxlength="30" placeholder="220/380V" />
+      @if (erro('tensao'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('frequencia_hz')">
+      <span>Frequência (Hz) *</span>
+      <select formControlName="frequencia_hz">
+        @for (f of frequencias; track f) {
+          <option [ngValue]="f">{{ f }} Hz</option>
+        }
+      </select>
+      @if (erro('frequencia_hz'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('polos')">
+      <span>Polos *</span>
+      <select formControlName="polos">
+        @for (p of polos; track p) {
+          <option [ngValue]="p">{{ p }}</option>
+        }
+      </select>
+      @if (erro('polos'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('rotacao_rpm')">
+      <span>Rotação (rpm) *</span>
+      <input type="number" formControlName="rotacao_rpm" step="1" min="1" placeholder="1730" />
+      @if (erro('rotacao_rpm'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('carcaca')">
+      <span>Carcaça</span>
+      <input formControlName="carcaca" maxlength="20" placeholder="132M" />
+      @if (erro('carcaca'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('grau_protecao')">
+      <span>Grau de proteção</span>
+      <input formControlName="grau_protecao" maxlength="10" placeholder="IP55" />
+      @if (erro('grau_protecao'); as msg) { <small>{{ msg }}</small> }
+    </label>
+
+    <label class="field" [class.invalid]="erro('preco')">
+      <span>Preço (R$)</span>
+      <input type="number" formControlName="preco" step="0.01" min="0" placeholder="5420.00" />
+      @if (erro('preco'); as msg) { <small>{{ msg }}</small> }
+    </label>
+  </div>
+
+  <div class="footer">
+    <span class="hint">* obrigatório</span>
+    <button type="button" class="btn" (click)="cancelado.emit()" [disabled]="salvando()">Cancelar</button>
+    <button type="submit" class="btn btn-primary" [disabled]="salvando()">
+      {{ salvando() ? 'Salvando…' : editando ? 'Salvar alterações' : 'Cadastrar' }}
+    </button>
+  </div>
+</form>
