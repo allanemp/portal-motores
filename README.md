@@ -68,7 +68,7 @@ echo "API_PORT=3099" > .env
 docker compose up -d --build
 ```
 
-O compose repassa `API_PORT` para o build do front (argumento `API_URL`), então o Angular passa a chamar `http://localhost:3099/api` sem editar código. Sem `.env`, os valores são exatamente os do contrato (3000/4200/3306).
+O front não é afetado: ele chama a API pelo caminho relativo `/api`, que o nginx repassa para o container da API pela rede interna. Sem `.env`, os valores são exatamente os do contrato (3000/4200/3306).
 
 ## API
 
@@ -188,7 +188,8 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 - Estados: carregando, lista vazia ("Nenhum motor encontrado"), erro de conexão com botão de tentar de novo, botão de salvar/excluir desabilitado durante a requisição.
 - Exclusão com `confirm()` nativo do navegador: simples e suficiente para o escopo.
 - Em Docker o front é compilado e servido por nginx (em vez de `ng serve`): sobe mais rápido e é como iria para produção.
-- A URL da API fica no `environment.ts` (`http://localhost:3000/api`). No build Docker, o argumento `API_URL` substitui esse valor, para a porta da API poder mudar via `.env` sem editar código. O build falha se a substituição não acontecer.
+- A URL da API no `environment.ts` é o caminho relativo `/api`. O navegador chama o mesmo endereço em que abriu o front, e o nginx (`frontend/nginx.conf`) repassa `/api/` para o serviço `api` do compose. Com `http://localhost:3000/api` fixo, o front só funcionaria no próprio computador: aberto de outro dispositivo (celular, outra máquina da rede), "localhost" aponta para o próprio dispositivo e nenhuma chamada chega à API. O proxy também deixa o front independente da porta publicada da API. A API continua exposta diretamente na porta 3000 (contrato e Swagger), com CORS liberado para `http://localhost:4200`.
+- Rodando com `ng serve` fora do Docker, o `proxy.conf.json` faz o mesmo papel, repassando `/api` para `http://localhost:3000`.
 
 ## Testes (back-end)
 

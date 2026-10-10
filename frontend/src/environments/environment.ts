@@ -1,6 +1,6 @@
-// URL base da API. O navegador acessa a API diretamente pela porta publicada no host.
-// No build Docker, este valor é substituído pelo argumento API_URL (ver frontend/Dockerfile),
-// que o docker-compose monta a partir de API_PORT. Sem .env, fica exatamente este.
+// URL base da API. Caminho relativo: o navegador chama o mesmo host/porta em que
+// abriu o front, e quem encaminha para a API é o nginx (Docker) ou o proxy do
+// `ng serve` (proxy.conf.json). Assim o front não depende de "localhost".
 export const environment = {
-  apiUrl: 'http://localhost:3000/api',
+  apiUrl: '/api',
 };
