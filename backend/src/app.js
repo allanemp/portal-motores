@@ -3,6 +3,7 @@ const cors = require('cors');
 const env = require('./config/env');
 const healthRoutes = require('./routes/health.routes');
 const fabricantesRoutes = require('./routes/fabricantes.routes');
+const motoresRoutes = require('./routes/motores.routes');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use('/api/health', healthRoutes);
 app.use('/api/fabricantes', fabricantesRoutes);
+app.use('/api/motores', motoresRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
