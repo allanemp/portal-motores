@@ -2,7 +2,7 @@
 
 Cadastro de motores elétricos com listagem, busca, criação, edição e exclusão.
 
-- **API REST** em Node.js 22 + Express 5 + MySQL 8.4 (driver `mysql2`), validação com **Zod**
+- **API REST** em Node.js 22 + Express 5 + MySQL 8.4, acesso a dados com **Prisma ORM 7**, validação com **Zod**
 - **Front-end** em Angular 22 (standalone components, Reactive Forms, signals)
 - **Docker Compose** sobe banco, API e front com um único comando
 
@@ -110,10 +110,11 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 ├── .env.example
 ├── database/init/          # 01-schema.sql e 02-seed.sql (executados pelo MySQL na 1ª subida)
 ├── backend/
+│   ├── prisma/schema.prisma  # mapeamento Prisma das tabelas
 │   ├── src/
 │   │   ├── domain/         # entidade Motor, schema Zod, erros e contratos de repositório
 │   │   ├── application/    # casos de uso (ListarMotores, CriarMotor, ...)
-│   │   ├── infrastructure/ # MySQL: pool, repositórios, config por env
+│   │   ├── infrastructure/ # Prisma: client, repositórios, config por env
 │   │   ├── interfaces/http/# Express: app, rotas, controllers, tratamento de erros
 │   │   ├── container.js    # composition root (injeção de dependência)
 │   │   └── server.js
@@ -131,14 +132,21 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 
 - *Domínio*: a entidade `Motor` só pode ser criada por `Motor.criar()`, que valida com o schema Zod — todo `Motor` em memória é válido. Os erros (`ValidationError`, `NotFoundError`, `ConflictError`) não conhecem HTTP.
 - *Aplicação*: um caso de uso por operação (responsabilidade única). Regras que dependem do banco (fabricante existe, código único) ficam em `RegrasCadastroMotor`, compartilhada por criar e editar.
-- *Inversão de dependência*: casos de uso recebem repositórios pelo construtor e dependem dos contratos `MotorRepository`/`FabricanteRepository`. Em produção o `container.js` injeta as implementações MySQL; nos testes, implementações em memória — por isso os testes de rota rodam sem banco.
+- *Inversão de dependência*: casos de uso recebem repositórios pelo construtor e dependem dos contratos `MotorRepository`/`FabricanteRepository`. Em produção o `container.js` injeta as implementações com Prisma; nos testes, implementações em memória — por isso os testes de rota rodam sem banco.
 - *Interface HTTP*: controllers finos, só traduzem req/res. O `errorHandler` é o único lugar que transforma erro de domínio em status (400/404/409/500).
 - Leituras devolvem um objeto de consulta já no formato da API (com `fabricante_nome` via JOIN); escritas usam a entidade. É uma separação simples entre leitura e escrita, sem criar uma entidade só para exibição.
 - O Zod fica no domínio: é uma biblioteca pura (sem I/O), e o schema descreve as invariantes do motor. As mensagens são customizadas para seguir o contrato (`"campo deve ..."`).
 
+**Prisma ORM.**
+- O banco é **MySQL 8.4**. O Prisma 7 exige um *driver adapter*; o oficial para o provider `mysql` é o `@prisma/adapter-mariadb` (o conector MariaDB fala o protocolo MySQL). Por isso aparecem os pacotes `mariadb`/`@prisma/adapter-mariadb` — o banco continua sendo MySQL.
+- O schema SQL do enunciado (`database/init/01-schema.sql`) continua sendo a fonte da verdade, criado pelo próprio MySQL na primeira subida. O `prisma/schema.prisma` apenas mapeia essas tabelas (conferido com `prisma db pull`), com campos em camelCase e `@map` para as colunas snake_case. Não usei `prisma migrate` para não ter duas fontes de schema.
+- Generator `prisma-client-js` porque o back-end é JavaScript CommonJS (o novo generator `prisma-client` gera TypeScript). O client é gerado no build da imagem (`npx prisma generate`) e não é versionado.
+- `DECIMAL` vem do Prisma como objeto `Decimal`; o repositório converte para `number` no JSON.
+- Erros do Prisma são traduzidos no repositório para erros de domínio: `P2002` (unique) → 409, `P2003` (FK) → 400.
+
 **Segurança.**
-- Todo SQL usa placeholders `?` do `mysql2`; nada vindo da requisição é concatenado.
-- Na busca, os curingas do `LIKE` (`%`, `_`, `\`) são escapados: buscar `%` procura o caractere literal, não "tudo".
+- Nenhum SQL é montado com dados da requisição: o Prisma gera consultas parametrizadas, e o único SQL escrito à mão (`SELECT 1` do health) usa tagged template.
+- O `contains` do Prisma vira `LIKE '%termo%'` mas **não** escapa curingas; por isso o repositório escapa `%`, `_` e `\` antes. Sem isso, buscar `%` retornaria todos os motores.
 - Erros 500 não expõem detalhes (ficam só no log). `x-powered-by` desligado. Container da API roda como usuário `node`.
 - CORS liberado apenas para `http://localhost:4200`.
 
@@ -148,8 +156,7 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 - Schema exatamente como o enunciado, sem ajustes.
 - Schema e seed via `/docker-entrypoint-initdb.d` (rodam só com volume vazio; `down -v` reseta).
 - Healthcheck com `mysqladmin ping` via TCP: durante a inicialização o MySQL roda sem rede, então o serviço só fica `healthy` depois que o seed terminou. A API usa `depends_on: service_healthy` **e** tem retentativa de conexão no código, para funcionar também fora do Docker.
-- `decimalNumbers: true` no driver, para `potencia_cv`/`preco` saírem como número no JSON.
-- Código duplicado: checagem antes de gravar (mensagem clara) + a `UNIQUE KEY` como garantia final em caso de concorrência (`ER_DUP_ENTRY` → 409).
+- Código duplicado: checagem antes de gravar (mensagem clara) + a `UNIQUE KEY` como garantia final em caso de concorrência (`P2002` → 409).
 
 **API.**
 - `:id` que não é inteiro positivo (ex.: `/motores/abc`) devolve 404: não existe motor com esse id.
@@ -173,13 +180,13 @@ npm install
 npm test
 ```
 
-Cobrem a entidade (regras de validação), todas as rotas HTTP com repositórios em memória (CRUD, 400/404/409, JSON malformado, CORS, health com banco fora) e a parametrização do SQL de busca.
+Cobrem a entidade (regras de validação), todas as rotas HTTP com repositórios em memória (CRUD, 400/404/409, JSON malformado, CORS, health com banco fora) e o repositório Prisma com um client falso (filtro de busca, escape do LIKE, conversões e tradução de erros). Não precisam de banco nem de `prisma generate`.
 
 ## Desenvolvimento sem Docker (opcional)
 
 ```bash
 # com um MySQL rodando e o schema/seed aplicados
-cd backend && npm install
+cd backend && npm install && npm run prisma:generate
 DB_HOST=localhost DB_USER=motores DB_PASSWORD=motores_dev DB_NAME=motores npm run dev
 
 cd frontend && npm install && npm start   # http://localhost:4200

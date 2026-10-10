@@ -23,12 +23,6 @@ function errorHandler(err, req, res, next) {
     return res.status(400).json({ error: 'Dados inválidos', details: ['JSON malformado'] });
   }
 
-  // Segurança extra: se duas requisições cadastrarem o mesmo código ao mesmo tempo,
-  // a pré-checagem passa nas duas e quem barra é a UNIQUE KEY do banco.
-  if (err.code === 'ER_DUP_ENTRY') {
-    return res.status(409).json({ error: 'Código já cadastrado' });
-  }
-
   // Detalhes do erro só no log do servidor, nunca na resposta.
   console.error(err);
   res.status(500).json({ error: 'Erro interno do servidor' });

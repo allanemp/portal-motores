@@ -11,3 +11,6 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
+
+# Prisma Client gerado (npx prisma generate)
+backend/generated/

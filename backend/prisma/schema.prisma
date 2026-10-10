@@ -1,0 +1,41 @@
+// Mapeamento Prisma das tabelas criadas por database/init/01-schema.sql.
+// O schema SQL do enunciado continua sendo a fonte da verdade (criado pelo MySQL
+// na primeira subida); aqui só descrevemos as tabelas para o Prisma Client.
+// Campos em camelCase no código, com @map para o nome real da coluna.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Fabricante {
+  id      Int     @id @default(autoincrement())
+  nome    String  @unique(map: "uk_fabricante_nome") @db.VarChar(80)
+  motores Motor[]
+
+  @@map("fabricantes")
+}
+
+model Motor {
+  id           Int        @id @default(autoincrement())
+  codigo       String     @unique(map: "uk_motor_codigo") @db.VarChar(30)
+  modelo       String     @db.VarChar(80)
+  fabricanteId Int        @map("fabricante_id")
+  potenciaCv   Decimal    @map("potencia_cv") @db.Decimal(8, 2)
+  tensao       String     @db.VarChar(30)
+  frequenciaHz Int        @map("frequencia_hz") @db.SmallInt
+  polos        Int        @db.TinyInt
+  rotacaoRpm   Int        @map("rotacao_rpm")
+  carcaca      String?    @db.VarChar(20)
+  grauProtecao String?    @map("grau_protecao") @db.VarChar(10)
+  preco        Decimal?   @db.Decimal(12, 2)
+  criadoEm     DateTime   @default(now()) @map("criado_em") @db.DateTime(0)
+  fabricante   Fabricante @relation(fields: [fabricanteId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_motor_fabricante")
+
+  @@index([fabricanteId], map: "fk_motor_fabricante")
+  @@map("motores")
+}
