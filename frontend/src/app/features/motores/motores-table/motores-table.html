@@ -1,0 +1,48 @@
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Modelo</th>
+        <th>Fabricante</th>
+        <th class="num">Potência (cv)</th>
+        <th>Tensão</th>
+        <th class="num">Freq. (Hz)</th>
+        <th class="num">Polos</th>
+        <th class="num">Rotação (rpm)</th>
+        <th>Carcaça</th>
+        <th>IP</th>
+        <th class="num">Preço</th>
+        <th class="actions">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (motor of motores(); track motor.id) {
+        <tr>
+          <td class="mono">{{ motor.codigo }}</td>
+          <td>{{ motor.modelo }}</td>
+          <td>{{ motor.fabricante_nome }}</td>
+          <td class="num">{{ motor.potencia_cv | number: '1.0-2' }}</td>
+          <td>{{ motor.tensao }}</td>
+          <td class="num">{{ motor.frequencia_hz }}</td>
+          <td class="num">{{ motor.polos }}</td>
+          <td class="num">{{ motor.rotacao_rpm | number }}</td>
+          <td>{{ motor.carcaca ?? '—' }}</td>
+          <td>{{ motor.grau_protecao ?? '—' }}</td>
+          <td class="num">{{ motor.preco !== null ? (motor.preco | currency: 'BRL') : '—' }}</td>
+          <td class="actions">
+            <button type="button" class="btn btn-small" (click)="editar.emit(motor)">Editar</button>
+            <button
+              type="button"
+              class="btn btn-small btn-danger"
+              [disabled]="excluindoId() === motor.id"
+              (click)="excluir.emit(motor)"
+            >
+              {{ excluindoId() === motor.id ? 'Excluindo…' : 'Excluir' }}
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

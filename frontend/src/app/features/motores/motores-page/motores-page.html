@@ -1,0 +1,25 @@
+<section class="toolbar">
+  <label class="search">
+    <span class="sr-only">Buscar por código ou modelo</span>
+    <input
+      type="search"
+      [formControl]="busca"
+      placeholder="Buscar por código ou modelo…"
+      autocomplete="off"
+    />
+  </label>
+</section>
+
+@if (carregando()) {
+  <p class="state" role="status"><span class="spinner"></span> Carregando motores…</p>
+} @else if (erroCarregamento()) {
+  <div class="state state-error" role="alert">
+    Não foi possível carregar os motores. Verifique se a API está no ar.
+    <button type="button" class="btn btn-small" (click)="recarregar()">Tentar novamente</button>
+  </div>
+} @else if (motores().length === 0) {
+  <p class="state">Nenhum motor encontrado.</p>
+} @else {
+  <app-motores-table [motores]="motores()" (editar)="editar($event)" (excluir)="excluir($event)" />
+  <p class="count">{{ motores().length }} motor(es)</p>
+}
