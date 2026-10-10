@@ -33,4 +33,45 @@ async function findById(id) {
   return rows[0] || null;
 }
 
-module.exports = { findAll, findById, escapeLike };
+// Verifica se já existe outro motor com o mesmo código (ignorando o próprio, na edição).
+async function codigoEmUso(codigo, ignoreId = 0) {
+  const [rows] = await pool.query('SELECT 1 FROM motores WHERE codigo = ? AND id <> ?', [codigo, ignoreId]);
+  return rows.length > 0;
+}
+
+async function create(motor) {
+  const [result] = await pool.query(
+    `INSERT INTO motores
+       (codigo, modelo, fabricante_id, potencia_cv, tensao, frequencia_hz,
+        polos, rotacao_rpm, carcaca, grau_protecao, preco)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      motor.codigo, motor.modelo, motor.fabricante_id, motor.potencia_cv, motor.tensao,
+      motor.frequencia_hz, motor.polos, motor.rotacao_rpm, motor.carcaca,
+      motor.grau_protecao, motor.preco,
+    ],
+  );
+  return result.insertId;
+}
+
+async function update(id, motor) {
+  await pool.query(
+    `UPDATE motores
+        SET codigo = ?, modelo = ?, fabricante_id = ?, potencia_cv = ?, tensao = ?,
+            frequencia_hz = ?, polos = ?, rotacao_rpm = ?, carcaca = ?,
+            grau_protecao = ?, preco = ?
+      WHERE id = ?`,
+    [
+      motor.codigo, motor.modelo, motor.fabricante_id, motor.potencia_cv, motor.tensao,
+      motor.frequencia_hz, motor.polos, motor.rotacao_rpm, motor.carcaca,
+      motor.grau_protecao, motor.preco, id,
+    ],
+  );
+}
+
+async function remove(id) {
+  const [result] = await pool.query('DELETE FROM motores WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+module.exports = { findAll, findById, codigoEmUso, create, update, remove, escapeLike };
