@@ -4,7 +4,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-RUN npx ng build --configuration production
+
+# URL da API usada pelo navegador. O padrão é o mesmo do environment.ts;
+# o docker-compose passa outro valor quando API_PORT é alterada no .env.
+ARG API_URL=http://localhost:3000/api
+RUN sed -i "s|apiUrl: '.*'|apiUrl: '${API_URL}'|" src/environments/environment.ts \
+ && grep -q "apiUrl: '${API_URL}'" src/environments/environment.ts \
+ && npx ng build --configuration production
 
 # Etapa 2: só os arquivos estáticos servidos pelo nginx (imagem final pequena)
 FROM nginx:1.27-alpine

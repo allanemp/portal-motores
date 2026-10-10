@@ -1,6 +1,7 @@
 # Sobe tudo com: docker compose up -d --build
 # As variáveis podem vir de um arquivo .env (opcional, ver .env.example).
 # Os valores após ":-" são padrões de DESENVOLVIMENTO LOCAL, usados quando o .env não existe.
+# Portas no host (padrão): front 4200, API 3000, MySQL 3306. Mudam com WEB_PORT, API_PORT e DB_PORT.
 
 services:
   db:
@@ -13,7 +14,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:-motores_dev}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_dev}
     ports:
-      - "3306:3306"
+      - "${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       # Scripts executados em ordem alfabética na PRIMEIRA subida (volume vazio).
@@ -32,7 +33,7 @@ services:
     container_name: motores-api
     environment:
       API_PORT: 3000
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${WEB_PORT:-4200}}
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-motores}
@@ -52,10 +53,14 @@ services:
     restart: unless-stopped
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # O navegador chama a API pela porta publicada no host.
+        API_URL: http://localhost:${API_PORT:-3000}/api
     container_name: motores-web
     ports:
-      - "4200:80"
+      - "${WEB_PORT:-4200}:80"
     depends_on:
       api:
         condition: service_healthy

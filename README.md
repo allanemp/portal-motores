@@ -48,14 +48,27 @@ docker compose down -v     # também apaga o volume: na próxima subida o seed �
 
 Para trocar algum valor, copie `.env.example` para `.env` e edite. O `.env` está no `.gitignore`.
 
-| Variável           | Padrão                  | Uso                               |
-| ------------------ | ----------------------- | --------------------------------- |
-| `DB_NAME`          | `motores`               | nome do banco                     |
-| `DB_USER`          | `motores`               | usuário da aplicação              |
-| `DB_PASSWORD`      | `motores_dev`           | senha do usuário da aplicação     |
-| `DB_ROOT_PASSWORD` | `root_dev`              | senha do root do MySQL            |
-| `API_PORT`         | `3000`                  | porta publicada da API no host    |
-| `CORS_ORIGIN`      | `http://localhost:4200` | origem liberada no CORS           |
+| Variável           | Padrão                     | Uso                                        |
+| ------------------ | -------------------------- | ------------------------------------------ |
+| `DB_NAME`          | `motores`                  | nome do banco                              |
+| `DB_USER`          | `motores`                  | usuário da aplicação                       |
+| `DB_PASSWORD`      | `motores_dev`              | senha do usuário da aplicação              |
+| `DB_ROOT_PASSWORD` | `root_dev`                 | senha do root do MySQL                     |
+| `API_PORT`         | `3000`                     | porta da API no host                       |
+| `WEB_PORT`         | `4200`                     | porta do front no host                     |
+| `DB_PORT`          | `3306`                     | porta do MySQL no host                     |
+| `CORS_ORIGIN`      | `http://localhost:${WEB_PORT}` | origem liberada no CORS                |
+
+### Se alguma porta já estiver em uso
+
+Crie um `.env` só com a porta que conflita e suba de novo com `--build`. Exemplo, com a 3000 ocupada:
+
+```bash
+echo "API_PORT=3099" > .env
+docker compose up -d --build
+```
+
+O compose repassa `API_PORT` para o build do front (argumento `API_URL`), então o Angular passa a chamar `http://localhost:3099/api` sem editar código. Sem `.env`, os valores são exatamente os do contrato (3000/4200/3306).
 
 ## API
 
@@ -175,6 +188,7 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 - Estados: carregando, lista vazia ("Nenhum motor encontrado"), erro de conexão com botão de tentar de novo, botão de salvar/excluir desabilitado durante a requisição.
 - Exclusão com `confirm()` nativo do navegador: simples e suficiente para o escopo.
 - Em Docker o front é compilado e servido por nginx (em vez de `ng serve`): sobe mais rápido e é como iria para produção.
+- A URL da API fica no `environment.ts` (`http://localhost:3000/api`). No build Docker, o argumento `API_URL` substitui esse valor, para a porta da API poder mudar via `.env` sem editar código. O build falha se a substituição não acontecer.
 
 ## Testes (back-end)
 
