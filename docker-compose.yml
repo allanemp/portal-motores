@@ -1,0 +1,55 @@
+# Sobe tudo com: docker compose up -d --build
+# As variáveis podem vir de um arquivo .env (opcional, ver .env.example).
+# Os valores após ":-" são padrões de DESENVOLVIMENTO LOCAL, usados quando o .env não existe.
+
+services:
+  db:
+    image: mysql:8.4
+    container_name: motores-db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-motores}
+      MYSQL_USER: ${DB_USER:-motores}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-motores_dev}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_dev}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Scripts executados em ordem alfabética na PRIMEIRA subida (volume vazio).
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Durante a inicialização o MySQL roda sem rede (só socket);
+      # via TCP ele só responde quando schema e seed já foram carregados.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api:
+    build: ./backend
+    container_name: motores-api
+    environment:
+      API_PORT: 3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-motores}
+      DB_USER: ${DB_USER:-motores}
+      DB_PASSWORD: ${DB_PASSWORD:-motores_dev}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
