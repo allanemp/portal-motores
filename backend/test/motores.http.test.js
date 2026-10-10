@@ -117,3 +117,12 @@ test('CORS liberado para o front', async () => {
   const res = await request(app).get('/api/health').set('Origin', 'http://localhost:4200');
   assert.equal(res.headers['access-control-allow-origin'], 'http://localhost:4200');
 });
+
+test('documentação Swagger disponível', async () => {
+  const spec = await request(app).get('/api/docs.json').expect(200);
+  assert.equal(spec.body.openapi, '3.1.0');
+  assert.ok(spec.body.paths['/motores/{id}']);
+
+  const ui = await request(app).get('/api/docs/').expect(200);
+  assert.match(ui.text, /swagger-ui/);
+});

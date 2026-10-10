@@ -41,6 +41,7 @@ docker compose down -v     # também apaga o volume: na próxima subida o seed �
 | ------------------ | ------------------------------- |
 | Front-end Angular  | http://localhost:4200           |
 | API Node           | http://localhost:3000/api       |
+| Documentação (Swagger) | http://localhost:3000/api/docs |
 | MySQL              | localhost:3306                  |
 
 ### Variáveis de ambiente (opcional)
@@ -59,6 +60,8 @@ Para trocar algum valor, copie `.env.example` para `.env` e edite. O `.env` est�
 ## API
 
 Base: `http://localhost:3000/api`
+
+**Documentação interativa (Swagger UI): http://localhost:3000/api/docs**. Dá para testar cada rota pelo navegador com "Try it out". A especificação OpenAPI 3.1 em JSON fica em `/api/docs.json` e pode ser importada no Postman/Insomnia.
 
 | Método | Rota                     | Retorno                                                 |
 | ------ | ------------------------ | ------------------------------------------------------- |
@@ -115,7 +118,7 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 │   │   ├── domain/         # entidade Motor, schema Zod, erros e contratos de repositório
 │   │   ├── application/    # casos de uso (ListarMotores, CriarMotor, ...)
 │   │   ├── infrastructure/ # Prisma: client, repositórios, config por env
-│   │   ├── interfaces/http/# Express: app, rotas, controllers, tratamento de erros
+│   │   ├── interfaces/http/# Express: app, rotas, controllers, erros e docs/openapi.js (Swagger)
 │   │   ├── container.js    # composition root (injeção de dependência)
 │   │   └── server.js
 │   └── test/
@@ -162,6 +165,7 @@ Todas as mensagens de erro de formato são devolvidas de uma vez em `details`.
 - `:id` que não é inteiro positivo (ex.: `/motores/abc`) devolve 404: não existe motor com esse id.
 - `DELETE` devolve 204 (sem corpo).
 - Express 5, que encaminha erros de funções `async` para o handler sem `try/catch` em cada rota.
+- Swagger: a especificação OpenAPI é escrita como um objeto JS em `interfaces/http/docs/openapi.js` (camada de interface, porque descreve o contrato HTTP), em vez de comentários JSDoc espalhados pelas rotas. Fica tudo num lugar só, e as opções de frequência e polos vêm das constantes do domínio. O `servers` é relativo (`/api`), então o "Try it out" funciona em qualquer porta. A especificação foi validada com o Redocly CLI.
 
 **Front-end.**
 - Tela única: busca + botão "Novo motor" + formulário (abre acima da tabela) + tabela.

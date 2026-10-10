@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const { openApiSpec } = require('./docs/openapi');
 const { createRoutes } = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 
@@ -11,6 +13,10 @@ function createApp({ controllers, corsOrigin }) {
   app.disable('x-powered-by');
   app.use(cors({ origin: corsOrigin }));
   app.use(express.json());
+
+  // Documentação: Swagger UI em /api/docs e a especificação em /api/docs.json.
+  app.get('/api/docs.json', (req, res) => res.json(openApiSpec));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: 'API Motores — Docs' }));
 
   app.use('/api', createRoutes(controllers));
 
