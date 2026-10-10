@@ -1,0 +1,13 @@
+# Variáveis de ambiente reais nunca vão para o repositório
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+.angular/
+coverage/
+*.log
+.DS_Store
+.vscode/
+.idea/
