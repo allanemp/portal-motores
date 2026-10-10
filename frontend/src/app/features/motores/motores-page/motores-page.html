@@ -17,7 +17,7 @@
   <app-motor-form [motor]="motorEmEdicao()" (salvo)="aoSalvar()" (cancelado)="fecharFormulario()" />
 }
 
-@if (carregando()) {
+@if (carregando() && motores().length === 0) {
   <p class="state" role="status"><span class="spinner"></span> Carregando motores…</p>
 } @else if (erroCarregamento()) {
   <div class="state state-error" role="alert">
@@ -27,6 +27,17 @@
 } @else if (motores().length === 0) {
   <p class="state">Nenhum motor encontrado.</p>
 } @else {
-  <app-motores-table [motores]="motores()" (editar)="editar($event)" (excluir)="excluir($event)" />
-  <p class="count">{{ motores().length }} motor(es)</p>
+  <app-motores-table
+    [motores]="motores()"
+    [excluindoId]="excluindoId()"
+    (editar)="editar($event)"
+    (excluir)="excluir($event)"
+  />
+  <p class="count" role="status">
+    @if (carregando()) {
+      <span class="spinner"></span> Atualizando…
+    } @else {
+      {{ motores().length }} motor(es)
+    }
+  </p>
 }
